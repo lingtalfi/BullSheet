@@ -337,13 +337,17 @@ Then, remove any empty line in that file, including the last one.
 
 The following conventions were used by me, please use them too:
 
-- create two files: 
+
+- create two files:
+ 
+``` 
 ----- data.txt, and put your data in it
 ----- src.md, add meta info about that you like here. I generally put the number of lines, and the url 
                 where I found the list. There is no special formatting.
+``` 
 
 
-Then, create a pull request to the [BullSheet repository](https://github.com/bullsheet/bullsheets-repo) (recommended
+- Then, create a pull request to the [BullSheet repository](https://github.com/bullsheet/bullsheets-repo) (recommended
 because that's an obvious place to search for bullsheets),
 or you can always create your own bullsheet repository if you prefer to.
 

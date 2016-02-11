@@ -349,6 +349,14 @@ Related
 
 
 
+Dependencies
+------------------
+
+- [lingtalfi/Bat 1.29](https://github.com/lingtalfi/Bat)
+- [lingtalfi/DirScanner 1.3.0](https://github.com/lingtalfi/DirScanner)
+
+
+
 History Log
 ------------------
     

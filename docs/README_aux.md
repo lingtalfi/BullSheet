@@ -115,12 +115,17 @@ the "Using the Ling Bullsheets Generator" section below.
 Concepts
 ----------------
 
-BullSheet has 3 types of streams from which you can take the data:
+BullSheet has 4 types of streams from which you can take the data:
 
 - pure stream: things that comes from files, like first name, country, actress. 
 - generated stream: things generated with only php, like generated numbers, booleans, letters.
 - combined stream: combines data from the three types altogether, for instance an email is 
                         usually the combination of a pseudo, the arobase symbol, an internet provider, the dot symbol and an internet domain.
+
+- relational stream: which is the db aware stream: it pulls random data from your database  (added in 1.1.0)
+
+
+To see more about the relational stream, see my [relational stream conception notes](https://github.com/lingtalfi/BullSheet/blob/master/docs/relational_stream.md).
 
 
 

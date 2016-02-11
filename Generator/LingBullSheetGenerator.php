@@ -18,7 +18,7 @@ class LingBullSheetGenerator extends AuthorBullSheetGenerator
     //------------------------------------------------------------------------------/
     // COMBINED DATA
     //------------------------------------------------------------------------------/
-    public function email()
+    public function email(): string
     {
         return $this->pseudo() . '@' . $this->getPureData('free_email_provider_domains');
     }
@@ -142,7 +142,7 @@ class LingBullSheetGenerator extends AuthorBullSheetGenerator
         return $this->getPureData('last_name');
     }
 
-    public function top_level_domain(): string
+    public function topLevelDomain(): string
     {
         return $this->getPureData('top_level_domain');
     }

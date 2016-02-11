@@ -8,28 +8,22 @@ Generate fake data to populate your database.
 
 
 
+Features
+--------------
 
-The idea behind bullsheet is to generate random data based on files (custom files that you can create on the fly).
-
-The motivation is to populate a database with random data.
-
-
-
-Disclaimer: 
-
-- this planet does not include the data files, data files are located in the [bullsheets repository](https://github.com/bullsheet/bullsheets-repo)
-- it uses php7 (and will not work in lower versions)
- 
- 
- 
- 
-BullSheet can be installed as a [planet](https://github.com/lingtalfi/Observer/blob/master/article/article.planetReference.eng.md).
+- php7
+- easy to extend
+- data is decoupled from the generator, you can create your own data directory easily
+- existing public data repository 
 
 
-How to use?
----------------
 
-Once setup, here is how you use a bullsheet generator.
+
+
+The example
+-----------------
+
+This example showcases what kind of methods you can use.
 
 
 ```php
@@ -72,7 +66,7 @@ a($b->password());
 a($b->actor());
 a($b->firstName());
 a($b->lastName());
-a($b->top_level_domain());
+a($b->topLevelDomain());
 a($b->pseudo());
 a($b->email());
 
@@ -102,36 +96,44 @@ string 'dyanbriant-482660@digibel.be' (length=28)
 
 
 
-In order to implement this particular code above, you need to install the ling bullsheets repository on your 
-local machine (that's because the first name, top level domain, last name and actor data are in separated txt files 
-that you need to first have on your local machine).
-
-The steps for this procedure are described in more details in the install 
-the "Using the Ling Bullsheets Generator" section below.
 
 
+The basic idea
+-----------------
+
+The basic idea behind BullSheet is that it takes a random line in a file that you create.
+
+Now, to make things simple we create one directory where we put all the data.
+This directory is called the **bullsheets** directory, and there should be only one per host (machine).
+
+Also, by convention, all data is put in a .txt file.
+ 
+
+If you want more details on how it works, and why it works that way, go to the [more verbose README](https://github.com/lingtalfi/BullSheet/blob/master/docs/README_aux.md)
+that I first made. 
 
 
-Concepts
-----------------
-
-BullSheet has 3 types of streams from which you can take the data:
-
-- pure stream: things that comes from files, like first name, country, actress. 
-- generated stream: things generated with only php, like generated numbers, booleans, letters.
-- combined stream: combines data from the three types altogether, for instance an email is 
-                        usually the combination of a pseudo, the arobase symbol, an internet provider, the dot symbol and an internet domain.
+Follow the tutorial below to have a pragmatic understanding of how it works. 
 
 
 
-### Pure streams details: how it works
 
+The tutorial to understand the concepts
+-----------------
 
-The core mechanism of pure streams is the action of selecting a random line in a file.
+Alright.
+Create the following structure on your local machine.
+ 
+ 
+``` 
+- bullsheets
+----- rainbow_color  
+--------- data.txt  
+```
+ 
+ 
+Now open bullsheets/rainbow_color/data.txt and put the following content in it:
 
-This is a good news, because that means you can create any file, and take advantage of the BullSheet generator 
-method right away. So if you want to create a generator that only return one of the seven colors of the rainbow,
-just put this in a file:
 
 ```
 red
@@ -143,280 +145,9 @@ indigo
 violet
 ```
 
-and, well, if you are interested in, just go to the tutorial section below, because I want to talk about theory now.
-
-
-
-Files are prepared in advance, one element by line, to the discretion of the user (see where to find bullsheets section below).
-
-
-Now sometimes you have a lot of data, and you want to be more specific about the data you want; for instance you would like to 
-select only female first names, instead of just any first names, or maybe you want only german first names 
-instead of international first names.
-
-So how does BullSheet deal with that?
-
-Well, first understand that the **pure stream** only reads files that you (or someone else) has prepared.
-
-So in the end it's all about data organization.
-
-For simplicity, all your bullsheet data (called bullsheets from now on), are 
-located in a single arbitrary directory on your machine.
-
-
-There are many ways to organize data; in theory, one per developer.
-Although in practice we don't really care, I had to deal with that when coding the BullSheet class.
-
-Therefore BullSheet introduces the concept of domain.
-
-A domain is just another name for a directory.
-
-A domain contains, directly or indirectly, some **data files**.
-
-A **data file** is any file which extension is .txt.
-
-
-So if you are like me, given the "first name" example, I would tend to have this bullsheet structure:
-
-```
-- bullsheets/
------ first_name/
---------- all.txt
-```
-
-But if you are like Paul, you could have this kind of structure:
-
-```
-- bullsheets/
------ first_name/
---------- female/ 
-------------- data.txt
---------- male/ 
-------------- data.txt
-```
-
-
-Or if you are like Virginie, you could end up with this structure:
-
-
-```
-- bullsheets/
------ first_name/ 
---------- i18n/
-------------- fra/
------------------ female/
---------------------- b.txt
------------------ male/
---------------------- b.txt
-------------- ger/
------------------ female/
---------------------- b.txt
------------------ male/
---------------------- b.txt
-------------- ...
---------- years/
-------------- 1907/
------------------ female/
---------------------- b.txt
------------------ male/
---------------------- b.txt
-------------- ...
---------- ...
------ ... 
-```
-
-Or if you are like Mauricette, you could end up with this structure:
-
-```
-- bullsheets/
------ first_name/ 
---------- i18n/
-------------- fra/
------------------ 1907/
---------------------- female/
-------------------------- b.txt
---------------------- male/
-------------------------- b.txt
------------------ 1908/
---------------------- female/
-------------------------- b.txt
---------------------- male/
-------------------------- b.txt
-------------- ger/
------------------ 1907/
---------------------- female/
-------------------------- b.txt
---------------------- male/
-------------------------- b.txt
------------------ 1908/
---------------------- female/
-------------------------- b.txt
---------------------- male/
-------------------------- b.txt
-------------- ...
---------- ...
------ ... 
-```
+Now create a php file (anywhere), and put the following content in it:
  
-
-Or if you are like ... just kidding, I suppose you've got the idea.
-
-Now when you want to extract some random data, you can use the BullSheet's getPureData low level method;
-it takes a domain path, or an array of domain paths as argument, and returns a random line.
-
-Here are some example of calls, assuming we use Mauricette's structure above.
-
-```php
-// signature 
-
-
-b->getPureData ( first_name )       // select a first name from any file in the first_name directory 
-b->getPureData ( first_name/i18n )       // select a first name from any file in the first_name/i18n directory 
-b->getPureData ( first_name/i18n/female )       // select a first name from any file in the first_name/i18n/female directory 
-b->getPureData ( first_name/i18n/*/1907 )       // select a first name from a 1907 directory, any language, any gender 
-b->getPureData ( [first_name/i18n/fra/*/male, first_name/i18n/ger/1908 ]  )     // select a male french first name name (any date) or a german first name from 1908 (any gender) 
-
-```
-
-
-In the examples above, I used the wildcard.
-BullSheet can resolve wildcards, because it gives more flexibility and power to the user. 
-
-
-
-
-Now if you wonder how internally BullSheet works, bear with me (I know, that's not exactly a fun read).
-
-First, BullSheet creates a hash out of your domain argument, and see if it's already in memory.
-
-If it's not, then BullSheet resolves the wildcards if any and creates a list of files.
-
-Eventually, BullSheet creates the hash for further calls, and binds it to a list of files.
-
-Therefore, when you call BullSheet multiple times, it can reuse the list of files directly.
-
-Remember that BullSheet is originally designed to be used inside a foreach loop, so that's why it tries to optimize data access. 
-
-So now BullSheet can access a list of files for any given domain argument, and it picks one of them (file) randomly.
-The last step is to pick one random line from that file and return it to the user.
-   
-BullSheet tries to adapt the method used to pick up a random line, depending on the environment (do you have unix methods?),
-and the number of lines in your file. 
-   
-
-Okay, sorry for the bullshit. 
-
-Let's move on.
-
-
-
-
-
-
-
-
-
-
-
-
-Where to find bullsheets?
----------------------------
-
-There is one place called the [bullsheets-repo](https://github.com/bullsheet/bullsheets-repo).
-You can add your own bullsheets there (pull requests are welcome), and use the existing ones.
-
-
-
-How to share your own bullsheets?
-------------------------------------
-
-Create a file containing data, and find an appropriate name for it (I suggest to choose singular form rather than plural 
-    form if you have the choice).
-
-Then, remove any empty line in that file, including the last one.
-
-The following conventions were used by me, please use them too:
-
-
-- create two files:
  
-``` 
------ data.txt, and put your data in it
------ src.md, add meta info about that you like here. I generally put the number of lines, and the url 
-                where I found the list. There is no special formatting.
-``` 
-
-
-- Then, create a pull request to the [BullSheet repository](https://github.com/bullsheet/bullsheets-repo) (recommended
-because that's an obvious place to search for bullsheets),
-or you can always create your own bullsheet repository if you prefer to.
-
-
-
-
-
-BullSheet Hello tutorial
-----------------------
-
-In this tutorial, we will create add a method that returns one of the seven colors of the rainbow.
-Obviously, you can apply the same principle with a lot more choices (BullSheet actually is quite fast even with big files),
-but to understand things, we the 7 colors of the rainbow is a good start.
-
-So let's dive in.
-
-
-1\. Create a directory name bullsheets in your local machine.
- 
-I will create mine at /path/to/my/bullsheets.
- 
-This is our local bullsheets repository.
- 
-It will contain all our bullsheets.
-
-The 7 colors of the rainbow is just one bullsheet.
-
-So, since we will have a lot of directories there, we better be well organized.
-
-2\. Now create the rainbow_color directory inside your bullsheets directory.
-
-Mine will be here: **/path/to/my/bullsheets/rainbow_color**
-
-Note: as a convention, I always use the singular form of an object. 
-It kind of makes sense, but you can do as you want.
-
-
-3\. We now technically just need to create a .txt file and put the colors in it, one per line.
-
-However, I recommend to create two files (just a good habit to have if you are going to create many bullsheets):
-
-- data.txt, the data, one per line
-- src.md, some meta info about the data (the link where you find the data, the number of lines, etc...)
-
-Open the data.txt and put the following content inside:
-
-```
-red
-orange
-yellow
-green
-blue
-indigo
-violet
-```
-
-Notice that there is no empty line at the end (i.e. each line has a word on it).
-
-Then open the src.md file and put the following contents in it:
-
-```
-7 lines
-```
-
-As I said before, this is just a good habit (I believe), but you don't do it, it will still work.
-
-4\. Now, open a php file and put the following content in it (assuming you know what a planet is):
-
-
 ```php 
 <?php
 
@@ -427,71 +158,193 @@ require_once "bigbang.php"; // start the local universe
 
 
 
-$b = AuthorBullSheetGenerator::create()->setDir("/Volumes/Macintosh HD 2/it/php/projects/bullsheets-repo/bullsheets");
+$b = AuthorBullSheetGenerator::create()->setDir("/path/to/your/bullsheets");
 a($b->getPureData('rainbow_color'));
+
+``` 
+
+
+The above code will display the name of a rainbow color on your screen.
+
+### Explanations of the code
+
+We first require the [bigbang script, to start the universe](https://github.com/lingtalfi/TheScientist/blob/master/convention.portableAutoloader.eng.md) (be able 
+to parse any classes of the universe).
+
+Then we tell tot the BullSheet generator where our **bullsheets** repository is.
+
+And eventually we ask it to get a random line from any data file found in the rainbow_color directory.
+
+There is a lot more that we can do, if you feel curious, there are my [conception notes](https://github.com/lingtalfi/BullSheet/blob/master/docs/README_aux.md).
+
+
+
+
+
+The tutorial to use LingBullSheetGenerator
+-----------------
+
+If you understand the basic principle of the tutorial above, then you might understand LingBullSheetGenerator as well.
+LingBullSheetGenerator is a BullSheet generator which bullsheets structure looks like this (as the time of writing):
+
+
+
+```
+- bullsheets
+----- ling   
+--------- actor
+------------- given_name
+----------------- data.txt
+----------------- src.md
+--------- first_name
+------------- all
+----------------- data.txt
+----------------- src.md
+--------- free_email_provider_domains
+------------- all
+----------------- data.txt
+----------------- src.md
+--------- iso639-1
+------------- all
+----------------- data.txt
+----------------- src.md
+--------- iso639-2
+------------- all
+----------------- data.txt
+----------------- src.md
+--------- last_name
+------------- international
+----------------- all
+--------------------- data.txt
+--------------------- src.md
+----------------- female
+--------------------- data.txt
+--------------------- src.md
+----------------- male
+--------------------- data.txt
+--------------------- src.md
+--------- pseudo
+------------- american
+----------------- data.txt
+----------------- src.md
+--------- top_level_domain
+------------- all
+----------------- data.txt
+----------------- src.md
+```
+
+
+Download the data from the [ling bullsheets repository](https://github.com/bullsheet/bullsheets-repo/tree/master/bullsheets/ling),
+and place the ling dir into your own local **bullsheets** dir.
+
+
+
+Now to get, let's say a first name, you just need to target the first_name directory, like this:
+
+```php
+<?php
+
+
+use BullSheet\Generator\LingBullSheetGenerator;
+
+require_once "bigbang.php"; // start the local universe
+
+
+
+$b = LingBullSheetGenerator::create()->setDir("/path/to/your/bullsheets");
+a($b->getPureData('first_name'));
+
 
 ```
 
-The key here is that we use the magic method getPureData.
-
-This method picks a .txt file (in this tutorial we only have one, but we could have many), 
-and returns one random line from it.
-
-Now you can refresh your screen like crazy and sees the color names being displayed...
+Notice that we didn't specify the ling directory in the above code, that's because the getPureData method of the 
+LingBullSheetGenerator prefixes it automatically for us.
 
 
+Now in case you wonder, here are more examples.
+
+### get a random female last name
+
+Your domain is really a relative path to a directory.
+If you look closely to the structure of the ling/last_name directory, you will see that it contains 3 directories.
+
+By default, if you use a domain of last_name, the generator will pick any of the available data files (randomly),
+and return a random line for it.
+
+Now you can more specific and say that your domain is last_name/female, you would then get a random female name.
+See how it is done in the example below.
 
 
-Using the Ling Bullsheets Generator
-----------------------------------------
-
-In the first code example, at the very top of this document, I used the LingBullSheetGenerator class with some 
-bullsheets data.
-
-Understand that in order to generate so called pure stream data, you need to import the bullsheets on your computer first.
-  
-They are not included in this planet because it could grow out of control, and I wanted to 
-keep the size of my repository small.
-
-You can find the [ling bullsheets here](https://github.com/bullsheet/bullsheets-repo/tree/master/bullsheets/ling).
- 
-In order to do that, just download the zip, create a **bullsheets** directory on your local machine, 
-and unzip the tarball to your local **bullsheets** directory.
-
-Once you have done that, you basically just need to call the getPureData method, passing the 
-relative path (starting from your **bullsheets** directory) to a folder as an argument.
-
-Now if you use the LingBullSheetGenerator, there is one extra step: you need to import the directory called ling.
-
-The ling directory is a namespace that is automatically prefixed (by the LingBullSheetGenerator) to the 
-paths (domains) that you pass to the getPureData method.
-
-This means that if your path is rainbow_color, the LingBullSheetGenerator will actually look for a directory called 
-ling/rainbow_color inside your bullsheets directory.
-
-This is some kind of namespace if you will, but the LingBullSheetGenerator types it automatically for you.
+```php
+<?php
 
 
-  
+use BullSheet\Generator\LingBullSheetGenerator;
+
+require_once "bigbang.php"; // start the local universe
+
+
+
+$b = LingBullSheetGenerator::create()->setDir("/path/to/your/bullsheets");
+a($b->getPureData('last_name/female'));
+
+
+```
+
+
+Other possibilities are explored in greater details in the [conception notes](https://github.com/lingtalfi/BullSheet/blob/master/docs/README_aux.md).
 
 
 
 
+The classes organisation
+-------------------------------
+
+The following diagram represents how methods are distributed amongst the classes, and how classes are related 
+to each other.
+
+
+```
+
+BullSheetGenerator   // pure data layer
++ void          setDir ( str:dir ) 
++ string        getPureData ( str|array:domain=null ) 
+
+
+AuthorBullSheetGenerator extends BullSheetGenerator   // it adds a generated data layer
++ bool          boolean ( int:chanceOfGettingTrue=50 )
++ string        password ( int:length=10 )              // use the asciiChars method under the hood
++ string        numbers ( int:length=3 )
++ string        letters ( int:length=3 )
++ string        alphaNumericChars ( int:length=3 )      // a-z A-Z 0-9
++ string        wordChars ( int:length=3 )              // a-z A-Z 0-9 _  
++ string        asciiChars ( int:length=3 )             // from ascii code 32 (space) to 126 (~)
+
+
+LingBullSheetGenerator extends AuthorBullSheetGenerator   // add a combined data layer
+
+(combined layer data)
++ string        email ()
++ string        pseudo ( bool:useGenerator=true )       // using generator creates a lot more randomness
+(pure data sugar)
++ string        actor ()
++ string        firstName ()
++ string        lastName ()
++ string        topLevelDomain ()
 
 
 
 
-
-Personal note
------------------
-
-Omg, it's all about bullsheets!
-
-
- 
+```
 
 
 
+
+Related
+---------------
+
+- find more about [BullSheet conception](https://github.com/lingtalfi/BullSheet/blob/master/docs/README_aux.md)
+- the official [bullsheets repository](https://github.com/bullsheet/bullsheets-repo)
 
 
 

@@ -9,19 +9,112 @@ namespace BullSheet\Generator;
  * 
  */
 
+use Bat\FileSystemTool;
 use BullSheet\Exception\BullSheetException;
+use BullSheet\Util\RelationalUtil;
 
 class LingBullSheetGenerator extends AuthorBullSheetGenerator
 {
 
+    private $relationalUtil;
+
+    //------------------------------------------------------------------------------/
+    // GOODIES
+    //------------------------------------------------------------------------------/
+    public function populate(string $table, string $domain, callable $populate)
+    {
+        $file = $this->selectFile($domain);
+        if (file_exists($file)) {
+            $lines = file($file, FILE_IGNORE_NEW_LINES);
+            foreach ($lines as $line) {
+                call_user_func($populate, $line, $this);
+            }
+        }
+    }
+
+
+    //------------------------------------------------------------------------------/
+    // RELATIONAL DATA 
+    //------------------------------------------------------------------------------/
+    public function getTableKey(string $table, array $weights = null, string $keyName = 'id', bool $allowAutoIncrementReset = true): string
+    {
+        return $this->getRelationalUtil()->getTableKey($table, $weights, $keyName, $allowAutoIncrementReset);
+    }
 
     //------------------------------------------------------------------------------/
     // COMBINED DATA
     //------------------------------------------------------------------------------/
-    public function email(): string
+    public function comment(int $min = 5, int $max = 10): string
     {
-        return $this->pseudo() . '@' . $this->getPureData('free_email_provider_domains');
+        $s = '';
+        $n = mt_rand($min, $max);
+        for ($i = 0; $i < $n; $i++) {
+            if (0 !== $i) {
+                $s .= "\n";
+            }
+            $s .= $this->getPureData('comment') . ".";
+        }
+        return $s;
     }
+
+    /**
+     * lineLength: approximate minimum line length
+     */
+    public function dummySentence(int $min = 3, int $max = 5, int $lineLength = 50): string
+    {
+        $s = '';
+        $len = 0;
+        $n = mt_rand($min, $max);
+        for ($i = $n; $i > 0; $i--) {
+            $line = $this->getPureData('text/sentence/all') . ".";
+            $s .= $line;
+            $len += strlen($line);
+            if ($i > 1) {
+                if ($len >= $lineLength) {
+                    $s .= "\n";
+                    $len = 0;
+                }
+                else {
+                    $s .= " ";
+                }
+            }
+        }
+        return $s;
+    }
+
+    public function email(bool $useGenerator = false): string
+    {
+        return $this->pseudo($useGenerator) . '@' . $this->getPureData('free_email_provider_domain');
+    }
+
+    public function loremSentence(int $min = 5, int $max = 10): string
+    {
+        $s = '';
+        $n = mt_rand($min, $max);
+        for ($i = 0; $i < $n; $i++) {
+            if (0 !== $i) {
+                $s .= "\n";
+            }
+            $s .= $this->getPureData('lorem/sentence') . ".";
+        }
+        return $s;
+    }
+
+
+    public function loremWord(int $min = 5, int $max = 10): string
+    {
+        $s = '';
+        $n = mt_rand($min, $max);
+        for ($i = 0; $i < $n; $i++) {
+            if (0 !== $i) {
+                $s .= ' ';
+            }
+            $s .= $this->getPureData('lorem/word');
+        }
+        return $s;
+    }
+
+
 
     /**
      * Returns a pseudo, using either a generator (lots of variations),
@@ -124,6 +217,47 @@ class LingBullSheetGenerator extends AuthorBullSheetGenerator
         return $s;
     }
 
+ 
+
+    //------------------------------------------------------------------------------/
+    // GENERATED DATA EXTENSION
+    //------------------------------------------------------------------------------/
+    public function colorHexa(string $prefix = '#'): string
+    {
+        return $prefix . $this->hexa(6);
+    }
+
+    public function colorRgb(bool $useAlpha = false): string
+    {
+        $s = 'rgb(' . mt_rand(0, 255) . ', ' . mt_rand(0, 255) . ', ' . mt_rand(0, 255);
+        if (true === $useAlpha) {
+            $s .= ', ' . round(mt_rand(0, 100) / 100, 2);
+        }
+        $s .= ')';
+        return $s;
+    }
+
+    public function colorWeb(): string
+    {
+        if (1 === mt_rand(0, 1)) {
+            return $this->colorHexa();
+        }
+        else {
+            return $this->colorRgb((bool)mt_rand(0, 1));
+        }
+    }
+
+    public function dateMysql(string $min = '-1 month', string $max = '+1 month'): string
+    {
+        return $this->dateTimeBetween($min, $max)->format('Y-m-d');
+    }
+
+    public function dateTimeMysql(string $min = '-1 month', string $max = '+1 month'): string
+    {
+        return $this->dateTimeBetween($min, $max)->format('Y-m-d H:i:s');
+    }
+
+
     //------------------------------------------------------------------------------/
     // PURE DATA
     //------------------------------------------------------------------------------/
@@ -142,10 +276,77 @@ class LingBullSheetGenerator extends AuthorBullSheetGenerator
         return $this->getPureData('last_name');
     }
 
+    public function passwordHuman(): string
+    {
+        return $this->getPureData('password/common');
+    }
+
     public function topLevelDomain(): string
     {
         return $this->getPureData('top_level_domain');
     }
+    
+    public function websiteDomain(): string
+    {
+        return $this->getPureData('website_domain');
+    }
+
+
+    //------------------------------------------------------------------------------/
+    // PURE DATA IMAGES
+    //------------------------------------------------------------------------------/
+    public function imageUrlFromLorem(int $width = 400, int $height = 200, string $category = null): string
+    {
+        if (null === $category) {
+            return "http://lorempixel.com/$width/$height";
+        }
+        return "http://lorempixel.com/$width/$height/$category";
+    }
+
+    public function uploadedImage($dstPath, $dstUrl, string $domain = 'image'): string
+    {
+        return $this->uploadedMedia($dstPath, $dstUrl, $domain, '[image]');
+    }
+
+
+    public function uploadedMedia($dstPath, $dstUrl, string $domain = 'image', string $tag = '[media]'): string
+    {
+        $file = $this->getDir() . '/' . $this->getPureData($domain);
+        if (!file_exists($file)) {
+            throw new BullSheetException("File not found: $file");
+        }
+
+        $baseName = basename($file);
+        if (!is_string($dstPath)) {
+            $dstPath = call_user_func($dstPath, $baseName);
+            if (!is_string($dstPath)) {
+                throw new BullSheetException(sprintf("Return value of dstPath() must be of type string, %s returned", gettype($dstPath)));
+            }
+        }
+        $dstPath = str_replace($tag, $baseName, $dstPath);
+
+        if (!is_string($dstUrl)) {
+            $dstUrl = call_user_func($dstUrl, $baseName);
+            if (!is_string($dstUrl)) {
+                throw new BullSheetException(sprintf("Return value of dstUrl() must be of type string, %s returned", gettype($dstUrl)));
+            }
+        }
+        $dstUrl = str_replace($tag, $baseName, $dstUrl);
+
+
+        $dir = dirname($dstPath);
+        if (false === FileSystemTool::mkdir($dir, 0777, true)) {
+            throw new BullSheetException("Cannot create dstPath directory: $dir");
+        }
+
+        if (false === copy($file, $dstPath)) {
+            throw new BullSheetException("Could not copy $file to $dstPath");
+        }
+        return $dstUrl;
+    }
+
+
+
 
     //------------------------------------------------------------------------------/
     // 
@@ -175,5 +376,13 @@ class LingBullSheetGenerator extends AuthorBullSheetGenerator
                 throw new BullSheetException("Unknown choice: $choice");
                 break;
         }
+    }
+
+    private function getRelationalUtil(): RelationalUtil
+    {
+        if (null === $this->relationalUtil) {
+            $this->relationalUtil = RelationalUtil::create();
+        }
+        return $this->relationalUtil;
     }
 }

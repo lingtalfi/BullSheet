@@ -117,7 +117,7 @@ Concepts
 
 BullSheet has 4 types of streams from which you can take the data:
 
-- pure stream: things that comes from files, like first name, country, actress. 
+- pure stream: things that comes from files, like first name, country, actress, but also images (added in 1.1.0)
 - generated stream: things generated with only php, like generated numbers, booleans, letters.
 - combined stream: combines data from the three types altogether, for instance an email is 
                         usually the combination of a pseudo, the arobase symbol, an internet provider, the dot symbol and an internet domain.
@@ -307,7 +307,8 @@ The last step is to pick one random line from that file and return it to the use
    
 BullSheet tries to adapt the method used to pick up a random line, depending on the environment (do you have unix methods?),
 and the number of lines in your file. 
-   
+
+If you are still curious about how the BullSheetGenerator handles images, see my [pure_data_image conception notes](https://github.com/lingtalfi/BullSheet/blob/master/docs/pure_data_image.md). 
 
 Okay, sorry for the bullshit. 
 

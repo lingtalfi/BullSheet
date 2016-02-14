@@ -15,6 +15,19 @@ Features
 - easy to extend
 - data is decoupled from the generator, you can create your own data directory easily
 - existing public data repository 
+- covers a lot of concrete cases 
+- can populate a whole database with one populator script (full database demo provided in this document) 
+- almost alive (you can adjust the numbers of lines for a table, and it updates accordingly) 
+- handy methods for foreign keys, and to handle many to many relationship 
+- can use probability weights to influence the selection of rows used to populate a middle table (in the many to many relationship workflow)  
+  
+
+
+
+You end up with a realistic fake database.
+
+
+A must have companion when working in dev with a database and php, no bullshit.
 
 
 
@@ -308,7 +321,7 @@ to each other.
 
 BullSheetGenerator   // pure data layer
 + void          setDir ( str:dir ) 
-+ string        getPureData ( str|array:domain=null ) 
++ string        getPureData ( str|array:domain=null )  // basically, with this you can access any data in the bullsheets repo 
 
 
 AuthorBullSheetGenerator extends BullSheetGenerator   // it adds a generated data layer
@@ -324,18 +337,713 @@ AuthorBullSheetGenerator extends BullSheetGenerator   // it adds a generated dat
 LingBullSheetGenerator extends AuthorBullSheetGenerator   // add a combined data layer
 
 (combined layer data)
-+ string        email ()
++ string        comment ( int:min=5, int:max=10 )
++ string        dummySentence ( int:min=3, int:max=5, int:lineLength=50 )
++ string        email (bool:useGenerator=false)
++ string        loremSentence ( int:min=5, int:max=10 )
++ string        loremWord ( int:min=5, int:max=10 )
 + string        pseudo ( bool:useGenerator=true )       // using generator creates a lot more randomness
+
+(generated layer data)
++ string        colorHexa ()
++ string        colorRgb ()
++ string        colorWeb ()
++ string        dateMysql ()
++ string        dateTimeMysql ()
+
 (pure data sugar)
 + string        actor ()
 + string        firstName ()
 + string        lastName ()
++ string        passwordHuman ()
 + string        topLevelDomain ()
++ string        websiteDomain ()
 
+(pure data images)
++ string        imageUrlFromLorem ( int:width=400, int:height=200, str:category=null )
++ string        uploadedImage ( str|callable:dstPath, str|callable:dstUrl, str:domain=image )
++ string        uploadedMedia ( str|callable:dstPath, str|callable:dstUrl, str:domain=image, str:tag=[media] )
+
+
+
++ ... and more goodies
 
 
 
 ```
+
+
+
+
+The populator script, a full database example demo
+-----------------------------------------------
+
+
+A few words on populator.
+Populator is the idea of creating a whole fake database with one script.
+
+There is a AuthorPopulator class that I created while working on a project.
+I'll give you a concrete example of script using the AuthorPopulator.
+Note that the application had specific needs, an event calendar, and some "upload video/image" 
+stuff.
+
+
+Basically, you keep calling the addTable method for each table of the database.
+At the end of the script, you call the populate method to actually populate the tables.
+
+You can find documentation about the populator in the AuthorPopulator's comments,
+and in the [doc directory of this repository](https://github.com/lingtalfi/BullSheet/tree/master/docs).
+
+
+So, what we will be populating today is the following database.
+
+
+![an application example database](http://s19.postimg.org/p5kbj29r7/populator_example_db.png)
+
+
+And we can populate it with the following script.
+
+```php
+<?php
+
+declare(strict_types = 1);
+
+use Bat\FileSystemTool;
+use BullSheet\Generator\LingBullSheetGenerator;
+use BullSheet\Populator\AuthorPopulator;
+use BullSheet\Tool\BankDataGeneratorTool;
+use BullSheet\Tool\CleanListBuddyTool;
+use BullSheet\Tool\PickRandomLineTool;
+use BullSheet\Tool\ProbabilityTool;
+use BullSheet\Tool\UrlGeneratorTool;
+use InstantLog\InstantLog;
+use QuickPdo\QuickPdo;
+use QuickPdo\QuickPdoDbOperationTool;
+use YouTubeUtils\YouTubeVideo;
+
+require_once "bigbang.php"; // start the local universe
+
+
+
+
+InstantLog::log("start: " . date("Y-m-d H:i:s"));
+
+//$f = "/path/to/bullsheets-repo/bullsheets/ling/text/sentence/all/data.txt";
+//CleanListBuddyTool::outputCleanList($f);
+//exit;
+
+//------------------------------------------------------------------------------/
+// CONFIG
+//------------------------------------------------------------------------------/
+$sqlDb = "fake_app";
+$sqlUser = "root";
+$sqlPass = "root";
+
+$appDir = "/tmp/fakeapp";
+$appUploadChannelDir = "/tmp/fakeapp/uploaded/channel";
+$appUploadChannelLogoDir = "/tmp/fakeapp/uploaded/channel_logo";
+$appUploadProgramDir = "/tmp/fakeapp/uploaded/program";
+$appUploadTeasersDir = "/tmp/fakeapp/uploaded/program_teaser";
+$appUploadMediaDir = "/tmp/fakeapp/uploaded/media";
+$appUploadPannelDir = "/tmp/fakeapp/uploaded/panel";
+
+
+$bullsheetsDir = "/path/to/bullsheets-repo/bullsheets";
+$nbUsers = 50;
+$nbTags = 1000;
+$nbChannels = 200;
+$nbPrograms = 500;
+$nbMedia = 3000;
+$nbPanels = 200;
+$nbPlayLists = 600;
+$nbSharedEvents = 150;
+$nbProgramsAuxImages = $nbPrograms / 2;
+$nbProgramsTeasers = $nbPrograms / 2;
+
+
+$gen = LingBullSheetGenerator::create()->setDir($bullsheetsDir);
+
+
+$tagTypes = [
+    1 => 1, // creators
+    2 => 1, // actors
+    3 => 1, // emotion
+    4 => 1, // genre
+    5 => 10, // any
+];
+
+$channelTypes = [
+    1 => 4, // publique (free)
+    2 => 4, // payant (pro)
+    3 => 1, // privé  (special)
+];
+
+
+$mediaTypes = [
+    1 => 3, // clip
+    2 => 4, // program
+    3 => 2, // ad
+];
+
+
+function getAppUrl($appPath)
+{
+    global $appDir;
+    return str_replace($appDir, '', $appPath);
+}
+
+function getAppImage($dstDir, $identifier, array $imgTypeWeights = null)
+{
+    global $gen;
+    if (null === $imgTypeWeights) {
+        $imgTypeWeights = [
+            1 => 1, // uploaded
+            2 => 1, // url
+        ];
+    }
+
+    $imgType = ProbabilityTool::resolveWeight($imgTypeWeights);
+    if ('1' === $imgType) { // uploaded
+        $hash = hash('md5', $identifier);
+        $dstPath = $dstDir . "/$hash/[image]";
+        $dstUrl = getAppUrl($dstPath);
+        $img = $gen->uploadedImage($dstPath, $dstUrl);
+    }
+    else { // url
+        $img = $gen->imageUrlFromLorem();
+    }
+    return $img;
+}
+
+function getAppVideo($dstDir, $identifier, array $videoTypeWeights = null, &$url = null)
+{
+    global $gen;
+    if (null === $videoTypeWeights) {
+        $videoTypeWeights = [
+            1 => 1, // uploaded
+            2 => 1, // url
+        ];
+    }
+
+    $videoType = ProbabilityTool::resolveWeight($videoTypeWeights);
+    if ('1' === $videoType) { // uploaded
+        $hash = hash('md5', $identifier);
+        $dstPath = $dstDir . "/$hash/[media]";
+        $dstUrl = getAppUrl($dstPath);
+        $video = $gen->uploadedMedia($dstPath, $dstUrl, "video/demo");
+    }
+    else { // url
+        $video = $gen->getPureData("url/youtube");
+    }
+    return $video;
+}
+
+//------------------------------------------------------------------------------/
+// SCRIPT
+//------------------------------------------------------------------------------/
+ini_set('max_execution_time', '0');
+
+
+QuickPdo::setConnection(
+    "mysql:dbname=$sqlDb;host=127.0.0.1",
+    $sqlUser,
+    $sqlPass,
+    array(
+        PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES 'UTF8'",
+        PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+    )
+);
+
+
+AuthorPopulator::create()
+    ->setOnTableBefore(function($table){
+        a($table);
+    })
+    ->setOnExceptionCb(function (\Exception $e) {
+        a($e->getMessage());
+//        a($e->getTraceAsString());
+
+//        InstantLog::log($e);
+
+    })
+    ->addTable("clip_genres", "once", function () use ($gen) {
+        $gen->populate("clip_genres", "music_genre", function ($genre, LingBullSheetGenerator $g) {
+            QuickPdo::insert("clip_genres", [
+                'the_name' => $genre,
+                'color' => $g->colorHexa(),
+                'active' => 1,
+            ]);
+        });
+    })
+    ->addTable("users", $nbUsers, function () use ($gen) {
+        QuickPdo::insert("users", [
+            "email" => $gen->email(),
+            "pass" => $gen->passwordHuman(),
+            "rib" => BankDataGeneratorTool::rib(),
+            "active" => $gen->boolean(99),
+        ]);
+    })
+    ->addTable("categories", [
+        "Rire",
+        "Musique",
+        "Sport",
+        "Economie",
+        "Education",
+        "People",
+        "Actualité",
+    ], function ($k, $v) {
+        QuickPdo::insert("categories", [
+            "the_name" => $v,
+            "active" => 1,
+        ]);
+    })
+    ->addTable("owner_config", [
+        "new_tag_is_active_when_created" => 1,
+        "wozaic_front_nb_items_first_page" => 30,
+    ], function ($k, $v) {
+        QuickPdo::insert("owner_config", [
+            "the_key" => $k,
+            "the_value" => $v,
+        ]);
+    })
+    ->addTable("channels_options", [
+        "logo",
+        "link_facebook",
+        "link_twitter",
+        "link_linkedin",
+        "link_google",
+    ], function ($k, $v) {
+        QuickPdo::insert("channels_options", [
+            "the_name" => $v,
+        ]);
+    })
+    ->addTable("tags", $nbTags, function () use ($gen, $tagTypes) {
+        $type = ProbabilityTool::resolveWeight($tagTypes);
+        switch ($type) {
+            case '1':
+                $name = $gen->getPureData("movie_director");
+                break;
+            case '2':
+                $name = $gen->actor();
+                break;
+            case '3':
+                $name = $gen->getPureData("adjective/emotion");
+                break;
+            case '4':
+                $name = $gen->getPureData("movie_genre");
+                break;
+            case '5':
+                $name = $gen->getPureData("word");
+                break;
+        }
+
+        QuickPdo::insert("tags", [
+            "the_name" => $name,
+            "the_type" => $type,
+            "active" => $gen->boolean(99),
+        ]);
+    })
+    ->addTable("channels", $nbChannels, function () use ($gen, $channelTypes, $appUploadChannelDir) {
+        $type = ProbabilityTool::resolveWeight($channelTypes);
+        $name = $gen->getPureData("title/all");
+        $img = getAppImage($appUploadChannelDir, $name, [
+            1 => 4, // uploaded
+            2 => 4, // url
+        ]);
+
+
+        QuickPdo::insert("channels", [
+            "categories_id" => $gen->getTableKey("categories"),
+            "users_id" => $gen->getTableKey("users"),
+            "the_name" => $name,
+            "active" => $gen->boolean(99),
+            "the_type" => $type,
+            "slogan" => $gen->getPureData("slogan"),
+            "image" => $img,
+        ]);
+    })
+    ->addTable("channels_has_channels_options", "cross:channels;100;channels_options;100", function ($leftRow, $rightRow) use ($appUploadChannelLogoDir) {
+
+        $option = $rightRow['the_name'];
+        $name = $leftRow['the_name'];
+        switch ($option) {
+            case 'logo':
+                $value = getAppImage($appUploadChannelLogoDir, $name, [
+                    1 => 4, // uploaded
+                    2 => 4, // url
+                ]);
+                break;
+            case 'link_facebook':
+                $value = UrlGeneratorTool::fakeFacebook($name);
+                break;
+            case 'link_twitter':
+                $value = UrlGeneratorTool::fakeTwitter($name);
+                break;
+            case 'link_linkedin':
+                $value = UrlGeneratorTool::fakeLinkedin($name);
+                break;
+            case 'link_google':
+                $value = UrlGeneratorTool::fakeGooglePlus();
+                break;
+            default:
+                throw new \Exception("Unknown option: $option");
+                break;
+        }
+        QuickPdo::insert("channels_has_channels_options", [
+            "channels_id" => $leftRow['id'],
+            "channels_options_id" => $rightRow['id'],
+            "the_value" => $value,
+        ]);
+    }, [
+        'right' => [
+            'the_name' => [
+                'logo' => 6,
+                'link_facebook' => 4,
+                'link_twitter' => 3,
+                'link_linkedin' => 1,
+                'link_google' => 1,
+            ],
+        ],
+    ])
+    ->addTable("channels_has_tags", "cross:channels;90;tags;2", function ($leftRow, $rightRow) {
+        QuickPdo::insert("channels_has_tags", [
+            "channels_id" => $leftRow['id'],
+            "tags_id" => $rightRow['id'],
+        ]);
+    })
+    ->addTable("programs", $nbPrograms, function () use ($gen, $appUploadProgramDir) {
+        $name = $gen->getPureData("tv_program/wikipedia");
+        $img = getAppImage($appUploadProgramDir, $name, [
+            1 => 4, // uploaded
+            2 => 4, // url
+        ]);
+
+
+        $extra = "";
+        if (mt_rand(1, 10) > 8) {
+            $extra = $gen->loremSentence(1, 2);
+        }
+
+
+        QuickPdo::insert("programs", [
+            "channels_id" => $gen->getTableKey("channels"),
+            "the_name" => $name,
+            "color" => $gen->colorHexa(),
+            "thumbnail" => $img,
+            "short_description" => $gen->getPureData("slogan"),
+            "long_description" => substr($gen->loremSentence(3, 8), 0, 512),
+            "extra_text" => $extra,
+            "lang" => ProbabilityTool::resolveWeight([
+                'fra' => 9,
+                'eng' => 1,
+            ]),
+            "publication_year" => substr($gen->dateMysql('-20 years', 'now'), 0, 4),
+        ]);
+    })
+    ->addTable("programs_has_tags", "cross:programs;90;tags;2", function ($leftRow, $rightRow) {
+        QuickPdo::insert("programs_has_tags", [
+            "programs_id" => $leftRow['id'],
+            "tags_id" => $rightRow['id'],
+        ]);
+    })
+    ->addTable("users_rate_programs", "cross:users;20;programs;10", function ($leftRow, $rightRow) use ($gen) {
+        QuickPdo::insert("users_rate_programs", [
+            "users_id" => $leftRow['id'],
+            "programs_id" => $rightRow['id'],
+            "rating" => ProbabilityTool::resolveWeight([
+                0 => 1,
+                1 => 1,
+                2 => 1,
+                3 => 1,
+                4 => 1,
+                5 => 4,
+                6 => 5,
+                7 => 6,
+                8 => 6,
+                9 => 5,
+            ]),
+            "the_comment" => $gen->comment(1, 5),
+            "active" => ProbabilityTool::resolveWeight([
+                0 => 1,
+                1 => 99,
+            ]),
+        ]);
+    })
+    ->addTable("programs_aux_images", $nbProgramsAuxImages, function () use ($gen, $appUploadProgramDir) {
+
+        $pid = $gen->getTableKey("programs");
+        $info = QuickPdo::fetch("select the_name from programs where id=$pid");
+        $name = $info['the_name'];
+
+        $img = getAppImage($appUploadProgramDir, $name, [
+            1 => 4, // uploaded
+            2 => 4, // url
+        ]);
+        QuickPdo::insert("programs_aux_images", [
+            "programs_id" => $pid,
+            "url" => $img,
+        ]);
+    })
+    ->addTable("programs_teasers", $nbProgramsTeasers, function () use ($gen, $appUploadTeasersDir) {
+
+        $pid = $gen->getTableKey("programs");
+        $info = QuickPdo::fetch("select the_name from programs where id=$pid");
+        $name = $info['the_name'];
+
+        $video = getAppVideo($appUploadTeasersDir, $name, [
+            1 => 4, // uploaded
+            2 => 4, // url
+        ]);
+        QuickPdo::insert("programs_teasers", [
+            "programs_id" => $pid,
+            "url" => $video,
+        ]);
+    })
+    ->addTable("medias", $nbMedia, function () use ($gen, $mediaTypes, $appUploadMediaDir, $appDir) {
+
+
+        $mediaType = ProbabilityTool::resolveWeight($mediaTypes);
+        $mediaFormat = ProbabilityTool::resolveWeight([
+            0 => 5, // youtube
+            1 => 1, // media lib
+        ]);
+
+
+        $channelId = $userId = null;
+        $programId = $clipGenreId = null;
+
+        if ("0" === $mediaFormat) { // youtube
+            $info = $gen->getPureData("miscellaneous/youtube_info");
+            $p = explode('§', $info, 5);
+            $url = 'https://www.youtube.com/watch?v=' . $p[0];
+            $duration = $p[1];
+            $name = $p[2];
+            $thumbnail = $p[3];
+            $description = $p[4];
+        }
+        else {
+            $description = $gen->loremSentence(1, 3);
+            $name = $gen->getPureData("tv_program/wikipedia");
+            $thumbnail = getAppImage($appUploadMediaDir, $name, [
+                1 => 4, // uploaded
+                2 => 4, // url
+            ]);
+            $url = getAppVideo($appUploadMediaDir, $name, [
+                1 => 1, // uploaded
+            ]);
+
+            $file = $appDir . $url;
+            $cmd = '/opt/local/bin/ffprobe -v error -show_entries format=duration -of default=noprint_wrappers=1:nokey=1 "' . $file . '"';
+            $ret = 0;
+            $duration = (int)exec($cmd);
+        }
+
+
+        switch ($mediaType) {
+            case '1': // clip
+                $clipGenreId = $gen->getTableKey("clip_genres");
+                $channelId = $gen->getTableKey("channels");
+                break;
+            case '2': // program
+                $programId = $gen->getTableKey("programs");
+                $channelId = $gen->getTableKey("channels");
+                break;
+            case '3': // add
+                $userId = $gen->getTableKey("users");
+                break;
+            default:
+                throw new \Exception ("Should never happen, but I'm getting paranoid right now");
+                break;
+        }
+
+
+        if (mt_rand(1, 10) > 8) {
+            $description .= "\n" . $gen->loremSentence(1, 2);
+        }
+
+
+        QuickPdo::insert("medias", [
+            "channels_id" => $channelId,
+            "users_id" => $userId,
+            "programs_id" => $programId,
+            "clip_genres_id" => $clipGenreId,
+            "the_name" => mb_substr($name, 0, 255),
+            "the_type" => $mediaType,
+            "url" => $url,
+            "thumbnail" => $thumbnail,
+            "description" => mb_substr($description, 0, 512),
+            "duration" => $duration,
+        ]);
+    })
+    ->addTable("medias_has_tags", "cross:medias;90;tags;2", function ($leftRow, $rightRow) {
+        QuickPdo::insert("medias_has_tags", [
+            "medias_id" => $leftRow['id'],
+            "tags_id" => $rightRow['id'],
+        ]);
+    })
+    ->addTable("panels", $nbPanels, function () use ($gen, $appUploadPannelDir) {
+
+        $name = $gen->getPureData("slogan/wordlab");
+        $color = $bgColor = $image = '';
+        if (1 === mt_rand(0, 1)) {
+            $color = $gen->colorWeb();
+            $bgColor = $gen->colorWeb();
+        }
+        else {
+            $image = getAppImage($appUploadPannelDir, $name, [
+                1 => 4, // uploaded
+                2 => 4, // url
+            ]);
+        }
+
+        QuickPdo::insert("panels", [
+            "channels_id" => $gen->getTableKey("channels"),
+            "the_name" => $name,
+            "the_text" => $gen->dummySentence(3, 5),
+            "color" => $color,
+            "bg_color" => $bgColor,
+            "image" => $image,
+        ]);
+    })
+    ->addTable("playlists", $nbPlayLists, function () use ($gen) {
+
+        QuickPdo::insert("playlists", [
+            "channels_id" => $gen->getTableKey("channels"),
+            "the_name" => $gen->loremWord(5, 13),
+        ]);
+    })
+    ->addTable("playlists_has_medias", "cross:playlists;100;medias;0.3", function ($leftRow, $rightRow) {
+        QuickPdo::insert("playlists_has_medias", [
+            "playlists_id" => $leftRow['id'],
+            "medias_id" => $rightRow['id'],
+            "the_order" => mt_rand(0, 9),
+        ]);
+    })
+    ->addTable("the_events", "timelines:channels;100;-2 days;+2 days;0;5*60", function (array $row, &$time) use ($gen, $mediaTypes, $appUploadMediaDir, $appDir) {
+
+
+        $mediaId = $playListId = $panelId = null;
+        $curTime = $time;
+
+        $type = ProbabilityTool::resolveWeight([
+            '1' => 2, // clip
+            '2' => 13, // program
+            '3' => 2, // ad
+            '4' => 2, // playlist
+            '5' => 1, // panel
+        ]);
+
+
+        switch ($type) {
+            case '1': // clip
+            case '2': // program
+            case '3': // ad
+                $mediaId = $gen->getTableKey("medias", [
+                    'the_type' => [
+                        $type => 1, // 1: clip
+                    ],
+                ]);
+
+                $info = QuickPdo::fetch("select duration from medias where id=$mediaId");
+                $time += (int)$info['duration'];
+
+
+                break;
+            case '4': // program
+                $playListId = $gen->getTableKey("playlists");
+                $q = <<<DDD
+select sum(m.duration) as duration
+from playlists_has_medias h
+inner join medias m on m.id=h.medias_id
+where h.playlists_id=$playListId
+DDD;
+
+                $row = QuickPdo::fetch($q);
+                $time += (int)$row['duration'];
+
+                break;
+            case '5': // panel
+                $panelId = $gen->getTableKey("panels");
+                $time += mt_rand(20, 3600 * 3);
+                break;
+        }
+
+        $recurringId = 0;
+        if (mt_rand(0, 100) > 80) {
+            $recurringId = mt_rand(0, 10);
+        }
+
+        QuickPdo::insert("the_events", [
+            "channels_id" => $gen->getTableKey("channels"),
+            "medias_id" => $mediaId,
+            "playlists_id" => $playListId,
+            "panels_id" => $panelId,
+            "the_name" => "", // not used, conception error 
+            "thumbnail" => "",
+            "the_type" => $type,
+            "is_overwritable" => (bool)mt_rand(0, 1),
+            "recurring_id" => $recurringId,
+            "active" => (int)$gen->boolean(98),
+            "start_date" => date("Y-m-d H:i:s", $curTime),
+        ]);
+    })
+    ->addTable("shared_events", $nbSharedEvents, function () use ($gen) {
+
+        $min = strtotime('-2 days');
+        $max = strtotime('+2 days');
+
+        $start = mt_rand($min, $max);
+        $end = $start + mt_rand(20 * 60, 2 * 3600);
+
+
+        QuickPdo::insert("shared_events", [
+            "channels_id" => $gen->getTableKey("channels"),
+            "start_date" => date('Y-m-d H:i:s', $start),
+            "end_date" => date('Y-m-d H:i:s', $end),
+        ]);
+    })
+    ->addTable("users_own_shared_events", "cross:users;10;shared_events;1", function ($leftRow, $rightRow) {
+        QuickPdo::insert("users_own_shared_events", [
+            "users_id" => $leftRow['id'],
+            "shared_events_id" => $rightRow['id'],
+        ]);
+    })
+    ->populate();
+
+InstantLog::log("end: " . date("Y-m-d H:i:s"));
+
+```
+
+
+And the [database structure is here](https://github.com/lingtalfi/BullSheet/blob/master/docs/fakeapp.sql).
+
+
+
+
+### Some tips
+ 
+Generally, you add the addTable statements one after the others, test, and adjust your content.
+Don't be afraid to refresh your script:
+the populator workflow automatically skips table that are already populated as you wished,
+and always do the minimum of work needed to implement your needs.
+
+Also, a handy feature if you are in try and err mode, is the ability to force the populator to 
+repopulate a table entirely, this is done by adding the ":f" suffix at the end of the table name 
+(addTable method's first argument). Check the [documentation](https://github.com/lingtalfi/BullSheet/tree/master/docs) for more info.
+
+
+
+
+Notes:
+
+I measured the time needed for the example script to complete from scratch (although I don't work like that). 
+It took 7 minutes and 12 seconds for inserting 129 398 rows, and copying 2.14 Go of media to my fake app's uploaded directory.
+
+
+
+
+
+
 
 
 
@@ -352,14 +1060,40 @@ Related
 Dependencies
 ------------------
 
-- [lingtalfi/Bat 1.29](https://github.com/lingtalfi/Bat)
+- [lingtalfi/Bat 1.30](https://github.com/lingtalfi/Bat)
 - [lingtalfi/DirScanner 1.3.0](https://github.com/lingtalfi/DirScanner)
+- [lingtalfi/QuickPdo 1.16.0](https://github.com/lingtalfi/QuickPdo)
+
+
+
+
 
 
 
 History Log
 ------------------
     
+- 1.1.0 -- 2016-02-14
+
+    - add LingBullSheetGenerator.getTableKey method
+    - add LingBullSheetGenerator.dateMysql method
+    - add LingBullSheetGenerator.dateTimeMysql method
+    - add LingBullSheetGenerator.colorHexa method
+    - add LingBullSheetGenerator.loremWord method
+    - add LingBullSheetGenerator.loremSentence method
+    - add LingBullSheetGenerator.populate method
+    - add LingBullSheetGenerator.passwordHuman method
+    - add LingBullSheetGenerator.comment method
+    - add LingBullSheetGenerator.uploadedMedia method
+    - add LingBullSheetGenerator.colorRgb method
+    - add LingBullSheetGenerator.colorWeb method
+    - add AuthorBullSheetGenerator.hexa method
+    - add AuthorBullSheetGenerator.dateTimeBetween method
+    - add BankDataGeneratorTool
+    - add CleanListBuddyTool
+    - add UrlGeneratorTool
+
+        
 - 1.0.0 -- 2016-02-10
 
     - initial commit

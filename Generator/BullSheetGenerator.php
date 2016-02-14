@@ -6,6 +6,7 @@ namespace BullSheet\Generator;
  * LingTalfi 2016-02-10
  */
 use Bat\LocalHostTool;
+use BullSheet\Tool\PickRandomLineTool;
 use DirScanner\YorgDirScannerTool;
 
 class BullSheetGenerator implements BullSheetGeneratorInterface
@@ -30,9 +31,8 @@ class BullSheetGenerator implements BullSheetGeneratorInterface
 
     public function getPureData($domain = null): string
     {
-        $fileList = $this->getFileList($domain);
-        $file = $fileList[array_rand($fileList)];
-        return $this->getRandomLine($file);
+        $file = $this->selectFile($domain);
+        return PickRandomLineTool::getRandomLine($file);
     }
 
 
@@ -51,60 +51,16 @@ class BullSheetGenerator implements BullSheetGeneratorInterface
         return $this->dir;
     }
 
+    protected function selectFile($domain)
+    {
+        $fileList = $this->getFileList($domain);
+        return $fileList[array_rand($fileList)];
+    }
+
 
     //------------------------------------------------------------------------------/
     // 
     //------------------------------------------------------------------------------/
-    private function getRandomLine($file): string
-    {
-        if (false && LocalHostTool::isUnix()) {
-
-            /**
-             * I use unix tools first, because they are generally faster
-             *
-             * http://stackoverflow.com/questions/2162497/efficiently-counting-the-number-of-lines-of-a-text-file-200mb
-             *
-             */
-            $sFile = '"' . str_replace('"', '\"', $file) . '"';
-            $out = trim(exec('wc -l ' . $sFile));
-            $nbLines = (int)substr($out, 0, strpos($out, ' ')) + 1;
-
-            $randLine = mt_rand(1, $nbLines);
-
-            $line = exec('tail -n+' . $randLine . ' ' . $sFile . ' | head -n1');
-        }
-        else {
-            /**
-             * http://stackoverflow.com/questions/12118995/how-to-echo-random-line-from-text-file
-             */
-            $maxLineLength = 4096;
-            $handle = @fopen($file, "r");
-            if ($handle) {
-                $random_line = null;
-                $line = null;
-                $count = 0;
-                while (($theline = fgets($handle, $maxLineLength)) !== false) {
-                    $count++;
-                    // P(1/$count) probability of picking current line as random line
-                    if (mt_rand() % $count == 0) {
-                        $line = $theline;
-                    }
-                }
-                if (!feof($handle)) {
-                    fclose($handle);
-                    throw new BullSheetException("Error: unexpected fgets() fail");
-                }
-                else {
-                    fclose($handle);
-                }
-                /**
-                 * remove the line carriage return that sometimes get appended
-                 */
-                $line = trim($line);
-            }
-        }
-        return $line;
-    }
 
 
     private function getFileList($domain = null): array

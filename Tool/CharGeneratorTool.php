@@ -8,6 +8,17 @@ namespace BullSheet\Tool;
 class CharGeneratorTool
 {
 
+    public static function hexa(int $length = 3): string
+    {
+        $s = '';
+        $characters = '0123456789abcdef';
+        for ($i = 0; $i < $length; $i++) {
+            $s .= $characters[mt_rand(0, 15)];
+        }
+        return $s;
+    }
+    
+    
     public static function numbers(int $length = 3): string
     {
         $s = '';

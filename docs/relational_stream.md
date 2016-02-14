@@ -69,6 +69,10 @@ Implementation
 str         getTableKey ( str:table, array:weights=null, str:keyName=id, bool:allowAutoIncrementReset=true )
 ```
 
+The weight is an array of field => weight values.
+
+The keyName is the name of the key that you want the getTableKey method to return the value of.
+
 
 allowAutoIncrementReset: this method is likely to be used in a foreach loop.
 If weights are not used and the table has auto incremented fields, it is possible to drastically improve performances.
@@ -82,7 +86,8 @@ the BullSheet generator in the first place, you are in dev environment, and you
 don't mind having your auto-incremented fields reset.
   
 
-The weight is an array of field => weight values.
+
+
 
 
 

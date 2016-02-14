@@ -1052,7 +1052,7 @@ Related
 ---------------
 
 - find more about [BullSheet conception](https://github.com/lingtalfi/BullSheet/blob/master/docs/README_aux.md)
-- the official [bullsheets repository](https://github.com/bullsheet/bullsheets-repo)
+- the official [bullsheets repository](https://github.com/bullsheet/bullsheets-repo) (this is where you find the data for the BullSheetGenerator)
 
 
 

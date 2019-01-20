@@ -410,7 +410,7 @@ and in the [doc directory of this repository](https://github.com/lingtalfi/BullS
 So, what we will be populating today is the following database.
 
 
-![an application example database](http://s19.postimg.org/p5kbj29r7/populator_example_db.png)
+![an application example database](http://lingtalfi.com/img/universe/BullSheet/populator-example-db.png)
 
 
 And we can populate it with the following script.

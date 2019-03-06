@@ -1,12 +1,12 @@
 <?php
 
-namespace BullSheet\Tool;
+namespace Ling\BullSheet\Tool;
 
 /*
  * LingTalfi 2016-02-13
  */
-use Bat\LocalHostTool;
-use BullSheet\Exception\BullSheetException;
+use Ling\Bat\LocalHostTool;
+use Ling\BullSheet\Exception\BullSheetException;
 
 class PickRandomLineTool
 {

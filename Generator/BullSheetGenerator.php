@@ -1,13 +1,13 @@
 <?php
 
-namespace BullSheet\Generator;
+namespace Ling\BullSheet\Generator;
 
 /*
  * LingTalfi 2016-02-10
  */
-use Bat\LocalHostTool;
-use BullSheet\Tool\PickRandomLineTool;
-use DirScanner\YorgDirScannerTool;
+use Ling\Bat\LocalHostTool;
+use Ling\BullSheet\Tool\PickRandomLineTool;
+use Ling\DirScanner\YorgDirScannerTool;
 
 class BullSheetGenerator implements BullSheetGeneratorInterface
 {

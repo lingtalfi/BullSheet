@@ -1,6 +1,6 @@
 <?php
 
-namespace BullSheet\Exception;
+namespace Ling\BullSheet\Exception;
 
 /*
  * LingTalfi 2016-02-10

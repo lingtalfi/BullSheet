@@ -1,6 +1,6 @@
 <?php
 
-namespace BullSheet\Generator;
+namespace Ling\BullSheet\Generator;
 
 /*
  * LingTalfi 2016-02-10

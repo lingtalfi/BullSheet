@@ -1,6 +1,6 @@
 <?php
 
-namespace BullSheet\Populator;
+namespace Ling\BullSheet\Populator;
 
 /*
  * LingTalfi 2016-02-12

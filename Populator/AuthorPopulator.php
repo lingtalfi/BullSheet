@@ -1,17 +1,17 @@
 <?php
 
-namespace BullSheet\Populator;
+namespace Ling\BullSheet\Populator;
 
 /*
  * LingTalfi 2016-02-12
  * 
  */
-use BullSheet\CrossHandler\IteratorCrossHandler;
-use BullSheet\Exception\BullSheetException;
-use BullSheet\TimelinesHandler\AuthorTimelinesHandler;
-use QuickPdo\QuickPdo;
-use QuickPdo\QuickPdoExceptionTool;
-use QuickPdo\QuickPdoInfoTool;
+use Ling\BullSheet\CrossHandler\IteratorCrossHandler;
+use Ling\BullSheet\Exception\BullSheetException;
+use Ling\BullSheet\TimelinesHandler\AuthorTimelinesHandler;
+use Ling\QuickPdo\QuickPdo;
+use Ling\QuickPdo\QuickPdoExceptionTool;
+use Ling\QuickPdo\QuickPdoInfoTool;
 
 class AuthorPopulator implements PopulatorInterface
 {

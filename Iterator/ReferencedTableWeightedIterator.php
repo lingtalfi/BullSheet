@@ -1,14 +1,14 @@
 <?php
 
-namespace BullSheet\Iterator;
+namespace Ling\BullSheet\Iterator;
 
 /*
  * LingTalfi 2016-02-14
  */
-use BullSheet\Exception\BullSheetException;
-use BullSheet\Tool\ProbabilityTool;
-use QuickPdo\QuickPdo;
-use QuickPdo\QuickPdoInfoTool;
+use Ling\BullSheet\Exception\BullSheetException;
+use Ling\BullSheet\Tool\ProbabilityTool;
+use Ling\QuickPdo\QuickPdo;
+use Ling\QuickPdo\QuickPdoInfoTool;
 
 class ReferencedTableWeightedIterator implements \Iterator
 {

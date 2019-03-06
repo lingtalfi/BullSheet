@@ -1,15 +1,15 @@
 <?php
 
-namespace BullSheet\Util;
+namespace Ling\BullSheet\Util;
 
 /*
  * LingTalfi 2016-02-11
  */
-use BullSheet\Exception\BullSheetException;
-use BullSheet\Tool\ProbabilityTool;
-use QuickPdo\QuickPdo;
-use QuickPdo\QuickPdoDbOperationTool;
-use QuickPdo\QuickPdoInfoTool;
+use Ling\BullSheet\Exception\BullSheetException;
+use Ling\BullSheet\Tool\ProbabilityTool;
+use Ling\QuickPdo\QuickPdo;
+use Ling\QuickPdo\QuickPdoDbOperationTool;
+use Ling\QuickPdo\QuickPdoInfoTool;
 
 class RelationalUtil
 {

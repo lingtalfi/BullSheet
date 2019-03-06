@@ -64,8 +64,8 @@ We could use the following script to populate it.
 <?php
 
 
-use BullSheet\Generator\LingBullSheetGenerator;
-use QuickPdo\QuickPdo;
+use Ling\BullSheet\Generator\LingBullSheetGenerator;
+use Ling\QuickPdo\QuickPdo;
 
 require_once "bigbang.php"; // start the local universe
 

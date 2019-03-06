@@ -1,11 +1,11 @@
 <?php
 
-namespace BullSheet\TimelinesHandler;
+namespace Ling\BullSheet\TimelinesHandler;
 
 /*
  * LingTalfi 2016-02-14
  */
-use BullSheet\Iterator\ReferencedTableIterator;
+use Ling\BullSheet\Iterator\ReferencedTableIterator;
 
 class AuthorTimelinesHandler
 {

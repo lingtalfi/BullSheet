@@ -1,14 +1,14 @@
 <?php
 
-namespace BullSheet\CrossHandler;
+namespace Ling\BullSheet\CrossHandler;
 
 /*
  * LingTalfi 2016-02-14
  * 
  */
 
-use BullSheet\Exception\BullSheetException;
-use BullSheet\Iterator\ReferencedTableIterator;
+use Ling\BullSheet\Exception\BullSheetException;
+use Ling\BullSheet\Iterator\ReferencedTableIterator;
 
 class IteratorCrossHandler
 {

@@ -37,7 +37,7 @@ Once setup, here is how you use a bullsheet generator.
 
 
 
-use BullSheet\Generator\LingBullSheetGenerator;
+use Ling\BullSheet\Generator\LingBullSheetGenerator;
 
 require_once "bigbang.php"; // start the local universe
 
@@ -427,7 +427,7 @@ As I said before, this is just a good habit (I believe), but you don't do it, it
 <?php
 
 
-use BullSheet\Generator\AuthorBullSheetGenerator;
+use Ling\BullSheet\Generator\AuthorBullSheetGenerator;
 
 require_once "bigbang.php"; // start the local universe
 

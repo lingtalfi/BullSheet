@@ -16,7 +16,7 @@ Install
 
 Using the [uni tool](https://github.com/lingtalfi/universe-naive-importer)
 ```bash
-uni import BullSheet
+uni import Ling/BullSheet
 ```
 
 
@@ -55,7 +55,7 @@ This example showcases what kind of methods you can use.
 
 
 
-use BullSheet\Generator\LingBullSheetGenerator;
+use Ling\BullSheet\Generator\LingBullSheetGenerator;
 
 require_once "bigbang.php"; // start the local universe
 
@@ -177,7 +177,7 @@ Now create a php file (anywhere), and put the following content in it:
 <?php
 
 
-use BullSheet\Generator\AuthorBullSheetGenerator;
+use Ling\BullSheet\Generator\AuthorBullSheetGenerator;
 
 require_once "bigbang.php"; // start the local universe
 
@@ -270,7 +270,7 @@ Now to get, let's say a first name, you just need to target the first_name direc
 <?php
 
 
-use BullSheet\Generator\LingBullSheetGenerator;
+use Ling\BullSheet\Generator\LingBullSheetGenerator;
 
 require_once "bigbang.php"; // start the local universe
 
@@ -304,7 +304,7 @@ See how it is done in the example below.
 <?php
 
 
-use BullSheet\Generator\LingBullSheetGenerator;
+use Ling\BullSheet\Generator\LingBullSheetGenerator;
 
 require_once "bigbang.php"; // start the local universe
 
@@ -420,18 +420,18 @@ And we can populate it with the following script.
 
 declare(strict_types = 1);
 
-use Bat\FileSystemTool;
-use BullSheet\Generator\LingBullSheetGenerator;
-use BullSheet\Populator\AuthorPopulator;
-use BullSheet\Tool\BankDataGeneratorTool;
-use BullSheet\Tool\CleanListBuddyTool;
-use BullSheet\Tool\PickRandomLineTool;
-use BullSheet\Tool\ProbabilityTool;
-use BullSheet\Tool\UrlGeneratorTool;
-use InstantLog\InstantLog;
-use QuickPdo\QuickPdo;
-use QuickPdo\QuickPdoDbOperationTool;
-use YouTubeUtils\YouTubeVideo;
+use Ling\Bat\FileSystemTool;
+use Ling\BullSheet\Generator\LingBullSheetGenerator;
+use Ling\BullSheet\Populator\AuthorPopulator;
+use Ling\BullSheet\Tool\BankDataGeneratorTool;
+use Ling\BullSheet\Tool\CleanListBuddyTool;
+use Ling\BullSheet\Tool\PickRandomLineTool;
+use Ling\BullSheet\Tool\ProbabilityTool;
+use Ling\BullSheet\Tool\UrlGeneratorTool;
+use Ling\InstantLog\InstantLog;
+use Ling\QuickPdo\QuickPdo;
+use Ling\QuickPdo\QuickPdoDbOperationTool;
+use Ling\YouTubeUtils\YouTubeVideo;
 
 require_once "bigbang.php"; // start the local universe
 

@@ -1,6 +1,6 @@
 <?php
 
-namespace BullSheet\Iterator;
+namespace Ling\BullSheet\Iterator;
 
 /*
  * LingTalfi 2016-02-14

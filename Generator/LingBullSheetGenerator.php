@@ -1,6 +1,6 @@
 <?php
 
-namespace BullSheet\Generator;
+namespace Ling\BullSheet\Generator;
 
 /*
  * LingTalfi 2016-02-10
@@ -9,9 +9,9 @@ namespace BullSheet\Generator;
  * 
  */
 
-use Bat\FileSystemTool;
-use BullSheet\Exception\BullSheetException;
-use BullSheet\Util\RelationalUtil;
+use Ling\Bat\FileSystemTool;
+use Ling\BullSheet\Exception\BullSheetException;
+use Ling\BullSheet\Util\RelationalUtil;
 
 class LingBullSheetGenerator extends AuthorBullSheetGenerator
 {

@@ -1,14 +1,14 @@
 <?php
 
-namespace BullSheet\Generator;
+namespace Ling\BullSheet\Generator;
 
 /*
  * LingTalfi 2016-02-10
  */
-use Bat\LocalHostTool;
-use BullSheet\Exception\BullSheetException;
-use BullSheet\Tool\CharGeneratorTool;
-use DirScanner\YorgDirScannerTool;
+use Ling\Bat\LocalHostTool;
+use Ling\BullSheet\Exception\BullSheetException;
+use Ling\BullSheet\Tool\CharGeneratorTool;
+use Ling\DirScanner\YorgDirScannerTool;
 
 class AuthorBullSheetGenerator extends BullSheetGenerator
 {

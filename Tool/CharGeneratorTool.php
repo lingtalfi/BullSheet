@@ -1,6 +1,6 @@
 <?php
 
-namespace BullSheet\Tool;
+namespace Ling\BullSheet\Tool;
 
 /*
  * LingTalfi 2016-02-10

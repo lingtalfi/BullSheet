@@ -1,11 +1,11 @@
 <?php
 
-namespace BullSheet\Tool;
+namespace Ling\BullSheet\Tool;
 
 /*
  * LingTalfi 2016-02-12
  */
-use Bat\CaseTool;
+use Ling\Bat\CaseTool;
 
 class UrlGeneratorTool
 {
